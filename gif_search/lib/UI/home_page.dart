@@ -2,28 +2,31 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-
 class HomePage extends StatefulWidget {
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  static String _searchString;
-  static int _offset = 0;
-  static String trendingURL =
-      "https://api.giphy.com/v1/gifs/trending?api_key=rnTU9iVdd3ChegLQiMCMRpYU7DSzWnoS&limit=20&rating=G";
-  static String searchURL =
-      "https://api.giphy.com/v1/gifs/search?api_key=rnTU9iVdd3ChegLQiMCMRpYU7DSzWnoS&q=$_searchString&limit=19&offset=$_offset&rating=G&lang=en";
-
-  Map<String, dynamic> dataFromJson = new Map();
-
+  String _searchString;
+  int _offset;
+  String trendingURL;
+  String searchURL;
+  Map<String, dynamic> dataFromJson;
+  TextEditingController inputController;
 
   Future<Map> _getGIFS() async {
     http.Response response;
-    if (_searchString == null) {
+    if (_searchString == null || inputController.text.toString() == "") {
+      trendingURL =
+          "https://api.giphy.com/v1/gifs/trending?api_key=rnTU9iVdd3ChegLQiMCMRpYU7DSzWnoS&limit=20&rating=G";
       response = await http.get(trendingURL);
     } else {
+      trendingURL =
+          "https://api.giphy.com/v1/gifs/trending?api_key=rnTU9iVdd3ChegLQiMCMRpYU7DSzWnoS&limit=20&rating=G";
+      searchURL =
+          "https://api.giphy.com/v1/gifs/search?api_key=rnTU9iVdd3ChegLQiMCMRpYU7DSzWnoS&q=$_searchString&limit=19&offset=$_offset&rating=G&lang=en";
+
       response = await http.get(searchURL);
     }
     print(response);
@@ -32,8 +35,10 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void initState() {
-    // TODO: implement initState
     super.initState();
+    _offset = 0;
+    inputController = new TextEditingController();
+    dataFromJson = new Map();
 
     _getGIFS().then((value) {
       dataFromJson = value;
@@ -43,14 +48,12 @@ class _HomePageState extends State<HomePage> {
   int _getCountGifs(List list) {
     if (_searchString == null) {
       return list.length;
-    }
-    else {
+    } else {
       return list.length + 1;
     }
   }
 
   Widget _createGifTable(context, snapshot) {
-
     return GridView.builder(
         padding: EdgeInsets.all(5.0),
         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -59,22 +62,27 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           if (_searchString == null || index < snapshot.data["data"].length) {
             return GestureDetector(
-
-                child: Image.network(
-                    snapshot
-                        .data["data"][index]["images"]["fixed_height"]["url"],
-                    height: 300.0,
-                    fit: BoxFit.cover),
-                );
+              child: Image.network(
+                  snapshot.data["data"][index]["images"]["fixed_height"]["url"],
+                  height: 300.0,
+                  fit: BoxFit.cover),
+            );
           } else {
-            return Container(child: GestureDetector(child: Column(
-              mainAxisAlignment:MainAxisAlignment.center,
-                children: <Widget>[
-                  Icon(Icons.add, color: Colors.white, size: 50.0),
-                  Text("Load more",style: TextStyle(color: Colors.white,fontSize: 20.0))
-                ]),onTap: (){setState(() {
-                  _offset+=19;
-                });}));
+            return Container(
+                child: GestureDetector(
+                    child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: <Widget>[
+                          Icon(Icons.add, color: Colors.white, size: 50.0),
+                          Text("Load more",
+                              style: TextStyle(
+                                  color: Colors.white, fontSize: 20.0))
+                        ]),
+                    onTap: () {
+                      setState(() {
+                        _offset += 19;
+                      });
+                    }));
           }
         });
   }
@@ -92,6 +100,7 @@ class _HomePageState extends State<HomePage> {
           Padding(
               padding: EdgeInsets.all(5.0),
               child: TextField(
+                  controller: inputController,
                   decoration: InputDecoration(
                       labelText: "Search GIF",
                       labelStyle: TextStyle(color: Colors.white),
@@ -116,7 +125,7 @@ class _HomePageState extends State<HomePage> {
                             alignment: Alignment.center,
                             child: CircularProgressIndicator(
                               valueColor:
-                              AlwaysStoppedAnimation<Color>(Colors.white),
+                                  AlwaysStoppedAnimation<Color>(Colors.white),
                               strokeWidth: 4.0,
                             ));
 
