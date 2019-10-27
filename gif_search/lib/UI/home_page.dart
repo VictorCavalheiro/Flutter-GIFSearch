@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:gif_search/UI/gif_page.dart';
 import 'package:http/http.dart' as http;
+import 'package:share/share.dart';
+import 'package:transparent_image/transparent_image.dart';
 
 class HomePage extends StatefulWidget {
   @override
@@ -62,11 +65,20 @@ class _HomePageState extends State<HomePage> {
         itemBuilder: (context, index) {
           if (_searchString == null || index < snapshot.data["data"].length) {
             return GestureDetector(
-              child: Image.network(
-                  snapshot.data["data"][index]["images"]["fixed_height"]["url"],
-                  height: 300.0,
-                  fit: BoxFit.cover),
-            );
+                child: FadeInImage.memoryNetwork(
+                    placeholder: kTransparentImage,
+                    image: snapshot.data["data"][index]["images"]
+                        ["fixed_height"]["url"],
+                fit:BoxFit.cover,height: 300.0),
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (context) {
+                    return GifPage(snapshot.data["data"][index]);
+                  }));
+                },
+                onLongPress: () {
+                  Share.share(snapshot.data["data"][index]["images"]
+                      ["fixed_height"]["url"]);
+                });
           } else {
             return Container(
                 child: GestureDetector(
@@ -110,6 +122,7 @@ class _HomePageState extends State<HomePage> {
                   onSubmitted: (value) {
                     setState(() {
                       _searchString = value;
+                      _offset = 0;
                     });
                   })),
           Expanded(
